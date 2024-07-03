@@ -33,8 +33,16 @@ exports.createTodo = async (req, res) => {
 exports.getTodos = async (req, res) => {
   try {
     const todos = await prisma.todo.findMany({
-      include: {
-        user: true,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        completed: true,
+        user: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
     if (!todos) {
@@ -56,10 +64,18 @@ exports.getSingleTodo = async (req, res) => {
   try {
     const todo = await prisma.todo.findUnique({
       where: {
-        id: id,
+        id,
       },
-      include: {
-        user: true,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        completed: true,
+        user: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
 
