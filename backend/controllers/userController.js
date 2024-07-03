@@ -19,7 +19,7 @@ const registerUser = async (req, res) => {
     });
     if (!result.success) {
       const errorMessage = result.error.errors.map((err) => err.message);
-      return res.status(400).json({
+      return res.status(411).json({
         message: errorMessage[0] || "Validation failed",
       });
     }

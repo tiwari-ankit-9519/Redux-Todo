@@ -2,7 +2,9 @@ import React, { useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import login from "../assets/login.jpg";
-import { loginUser } from "../features/userSlice";
+import { loginUser, resetError } from "../features/userSlice";
+import LoadingComponent from "../components/LoadingComponent";
+import ErrorModal from "../components/ErrorModal";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -10,9 +12,12 @@ export default function Login() {
     password: "",
   });
 
-  const { loading, error } = useSelector((state) => state.user);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
 
-  const emialInputRef = useRef("");
+  const { error } = useSelector((state) => state.user);
+
+  const emailInputRef = useRef("");
   const passwordInputRef = useRef("");
 
   const dispatch = useDispatch();
@@ -21,24 +26,39 @@ export default function Login() {
   function handleClick(e) {
     e.preventDefault();
     const newFormData = {
-      email: emialInputRef.current.value,
+      email: emailInputRef.current.value,
       password: passwordInputRef.current.value,
     };
-    dispatch(loginUser(newFormData)).then((result) => {
-      if (result.payload) {
-        navigate("/home");
-      }
-    });
+
+    dispatch(loginUser(newFormData))
+      .unwrap()
+      .then((token) => {
+        setIsLoading(true);
+        setTimeout(() => {
+          navigate("/home");
+          setIsLoading(false);
+        }, 2000);
+      })
+      .catch((error) => {
+        setIsLoading(false);
+        setIsErrorModalOpen(true);
+        console.error(error);
+      });
 
     setFormData(newFormData);
   }
 
-  console.log(formData);
+  const handleCloseErrorModal = () => {
+    setIsErrorModalOpen(false);
+    dispatch(resetError());
+  };
 
   return (
     <>
-      {error && <p>{error}</p>}
-      {loading && <p>Loading...</p>}
+      {isErrorModalOpen && (
+        <ErrorModal error={error} onClose={handleCloseErrorModal} />
+      )}
+      {isLoading && <LoadingComponent />}
       <div
         className="flex justify-center items-center min-h-screen"
         style={{
@@ -47,7 +67,10 @@ export default function Login() {
           backgroundSize: "cover",
         }}
       >
-        <div className="flex flex-col text-white gap-2 w-full sm:w-full md:w-2/3 lg:w-1/3 mx-5">
+        <form
+          onSubmit={handleClick}
+          className="flex flex-col text-white gap-2 w-full sm:w-full md:w-2/3 lg:w-1/3 mx-5"
+        >
           <h1 className="text-2xl md:text-3xl lg:text-5xl text-white font-bold text-center">
             Welcome Back
           </h1>
@@ -59,7 +82,7 @@ export default function Login() {
           </p>
           <label className="font-semibold mt-5">Email</label>
           <input
-            ref={emialInputRef}
+            ref={emailInputRef}
             type="text"
             className="py-2 px-4 focus: outline-none border-gray-400 border rounded text-black"
             placeholder="Enter your email"
@@ -71,13 +94,10 @@ export default function Login() {
             className="py-2 px-4 focus: outline-none border-gray-400 border rounded text-black"
             placeholder="Enter your password"
           />
-          <button
-            className="p-2 text-white bg-blue-500 rounded mt-5 font-medium"
-            onClick={handleClick}
-          >
+          <button className="p-2 text-white bg-blue-500 rounded mt-5 font-medium">
             Sign In
           </button>
-        </div>
+        </form>
       </div>
     </>
   );

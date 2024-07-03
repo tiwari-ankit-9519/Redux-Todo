@@ -1,10 +1,9 @@
 import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
 import signup from "../assets/signup.jpg";
 import { useDispatch, useSelector } from "react-redux";
-
 import { signupUser } from "../features/userSlice";
+import ErrorModal from "../components/ErrorModal";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -13,10 +12,15 @@ export default function SignUp() {
     password: "",
   });
 
+  const [loading, setLoading] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { loading, error } = useSelector((state) => state.user);
+  const { error } = useSelector((state) => state.user);
+
+  console.log(error);
 
   const usernameInputRef = useRef("");
   const emailInputRef = useRef("");
@@ -30,23 +34,43 @@ export default function SignUp() {
       password: passwordInputRef.current.value,
     };
 
-    dispatch(signupUser(newFormData)).then((result) => {
-      if (result.payload) {
-        navigate("/home");
-      }
-    });
+    dispatch(signupUser(newFormData))
+      .unwrap()
+      .then((token) => {
+        setLoading(true);
+        setTimeout(() => {
+          navigate("/home");
+          setLoading(false);
+        }, 2000);
+      })
+      .catch((error) => {
+        setLoading(false);
+        setIsErrorModalOpen(true);
+        console.error(error);
+      });
+
     setFormData(newFormData);
   }
 
+  const handleCloseErrorModal = () => {
+    setIsErrorModalOpen(false);
+    dispatch({ type: "user/resetError" });
+  };
+
   return (
     <>
-      {error && <p>{error}</p>}
+      {isErrorModalOpen && (
+        <ErrorModal error={error} onClose={handleCloseErrorModal} />
+      )}
       {loading && <p>Loading...</p>}
       <div
         className="flex justify-center items-center min-h-screen"
         style={{ backgroundImage: `url(${signup})` }}
       >
-        <div className="flex flex-col text-white gap-2 w-full sm:w-full md:w-2/3 lg:w-1/3 mx-5">
+        <form
+          onSubmit={handleClick}
+          className="flex flex-col text-white gap-2 w-full sm:w-full md:w-2/3 lg:w-1/3 mx-5"
+        >
           <h1 className="text-2xl md:text-3xl lg:text-5xl text-center">
             Create an Account
           </h1>
@@ -74,13 +98,10 @@ export default function SignUp() {
             type="password"
             className="p-2 focus: outline-none border-gray-400 border rounded text-black"
           />
-          <button
-            className="p-2 text-white bg-blue-500 rounded mt-5 font-medium"
-            onClick={handleClick}
-          >
+          <button className="p-2 text-white bg-blue-500 rounded mt-5 font-medium">
             Sign Up
           </button>
-        </div>
+        </form>
       </div>
     </>
   );
