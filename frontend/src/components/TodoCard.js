@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import { useDispatch } from "react-redux";
-import { deleteTodos } from "../features/todoSlice";
+import { deleteTodos, toggleTodoCompletion } from "../features/todoSlice";
 
 export default function TodoCard({
   title,
@@ -10,11 +10,10 @@ export default function TodoCard({
   completed,
   id,
 }) {
-  const [isCompleted, setIsCompleted] = useState(completed);
   const dispatch = useDispatch();
 
   function handleClick() {
-    setIsCompleted(!isCompleted);
+    dispatch(toggleTodoCompletion(id));
   }
 
   return (
@@ -32,10 +31,14 @@ export default function TodoCard({
           {author}
         </p>
         <button
-          className="bg-green-500 p-2 rounded text-white"
+          className={
+            completed
+              ? "bg-green-500 p-2 rounded text-white"
+              : "bg-red-500 p-2 rounded text-white"
+          }
           onClick={handleClick}
         >
-          {isCompleted ? "Completed" : "Not Completed"}
+          {completed ? "Completed" : "Not Completed"}
         </button>
       </div>
       <TrashIcon

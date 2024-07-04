@@ -59,6 +59,28 @@ export const deleteTodos = createAsyncThunk(
   }
 );
 
+export const toggleTodoCompletion = createAsyncThunk(
+  "todo/updateTodo",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `${baseURL}/todo/${id}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${JSON.parse(
+              localStorage.getItem("token")
+            )}`,
+          },
+        }
+      );
+      return response.data.todo;
+    } catch (e) {
+      return rejectWithValue(e.response.data);
+    }
+  }
+);
+
 const todoSlice = createSlice({
   name: "todo",
   initialState,
@@ -110,11 +132,24 @@ const todoSlice = createSlice({
       .addCase(deleteTodos.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      .addCase(toggleTodoCompletion.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(toggleTodoCompletion.fulfilled, (state, action) => {
+        state.todo = state.todo.map((todo) =>
+          todo.id === action.payload.id ? action.payload : todo
+        );
+      })
+      .addCase(toggleTodoCompletion.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { resetError } = todoSlice.actions;
+export const { resetError, updateCompleted } = todoSlice.actions;
 
 const todoReducer = todoSlice.reducer;
 export default todoReducer;

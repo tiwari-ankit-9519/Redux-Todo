@@ -93,30 +93,37 @@ exports.getSingleTodo = async (req, res) => {
   }
 };
 
-exports.updateTodo = async (req, res) => {
+exports.toggleTodoCompleted = async (req, res) => {
   const id = req.params.id;
-  const { title, description } = req.body;
   try {
-    const result = todoSchema.safeParse(req.body);
-    if (!result.success) {
-      const errorMessage = result.error.errors.map((err) => err.message);
-      return res.status(400).json({
-        message: errorMessage[0] || "Validation failed",
-      });
+    const existingTodo = await prisma.todo.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!existingTodo) {
+      return res.status(404).json({ error: "Todo not found" });
     }
 
-    const todo = await prisma.todo.update({
+    const updatedTodo = await prisma.todo.update({
       where: {
         id: id,
       },
       data: {
-        title,
-        description,
+        completed: !existingTodo.completed,
+      },
+      include: {
+        user: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
 
-    res.status(201).json({
-      todo,
+    res.status(200).json({
+      todo: updatedTodo,
     });
   } catch (e) {
     return res.status(400).json({ error: e.message });
